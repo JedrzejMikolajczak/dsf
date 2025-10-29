@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quiz – Automatyka (15 MCQ)</title>
+  <style>
+    :root{
+      --bg:#0b0f13; --card:#111820; --text:#e8eef5; --muted:#9fb2c9; --accent:#52a5ff; --accent2:#7bd389; --danger:#ff6b6b;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Ubuntu,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#0b0f13,#0e141a 40%,#0b0f13);color:var(--text)}
+    .wrap{max-width:860px;margin:auto;padding:16px 16px 90px}
+    header{position:sticky;top:0;background:rgba(11,15,19,.8);backdrop-filter:blur(8px);z-index:5}
+    header .bar{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #1b2430}
+    .title{font-weight:700;font-size:20px}
+    .muted{color:var(--muted)}
+    .card{background:var(--card);border:1px solid #1a2230;border-radius:16px;box-shadow:var(--shadow);padding:18px}
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    button{appearance:none;border:0;border-radius:12px;padding:12px 14px;font-weight:600;cursor:pointer}
+    .btn{background:#172130;color:var(--text)}
+    .btn:hover{filter:brightness(1.08)}
+    .primary{background:var(--accent)}
+    .success{background:var(--accent2)}
+    .danger{background:var(--danger)}
+    .ghost{background:transparent;border:1px solid #2a3647}
+    .q-index{font-size:14px;letter-spacing:.2px}
+    .question{font-size:18px;margin:12px 0 16px}
+    .options{display:grid;gap:10px}
+    .opt{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid #202b3a;border-radius:12px;background:#0f151d}
+    .opt input{width:20px;height:20px;margin-top:2px}
+    .opt label{flex:1;line-height:1.35}
+    .result{margin-top:12px;font-weight:700}
+    .good{color:var(--accent2)}
+    .bad{color:var(--danger)}
+    .footerBar{position:fixed;left:0;right:0;bottom:0;background:rgba(11,15,19,.9);backdrop-filter:blur(8px);border-top:1px solid #1b2430}
+    .footerBar .inner{max-width:860px;margin:auto;display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 16px}
+    .progress{width:100%;height:10px;background:#1a2230;border-radius:999px;overflow:hidden}
+    .progress>div{height:100%;background:linear-gradient(90deg,var(--accent),#6cc4ff);width:0%}
+    .chips{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .chip{border:1px solid #2a3647;border-radius:999px;padding:8px 12px;font-size:12px;color:var(--muted)}
+    .scr{font-variant-numeric:tabular-nums}
+    .grid{display:grid;gap:12px}
+    .twocol{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media (max-width:640px){.twocol{grid-template-columns:1fr}}
+    .small{font-size:12px}
+    .center{text-align:center}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <div class="title">Quiz – Automatyka</div>
+      <div class="chips">
+        <span class="chip">15 pytań</span>
+        <span class="chip">Wielokrotnego wyboru</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="card grid" id="intro">
+      <p>Powtórka do automatyki: 15 pytań wielokrotnego wyboru (niektóre mają więcej niż jedną poprawną odpowiedź). Możesz uczyć się w trybie <b>„Jedno pytanie”</b> lub <b>„Lista”</b>, włączyć <b>losową kolejność</b> oraz <b>zachowywać postęp</b>.</p>
+      <div class="controls">
+        <button class="primary" id="startOne">Start – jedno pytanie</button>
+        <button class="btn" id="startList">Pokaż listę pytań</button>
+        <button class="ghost" id="toggleShuffle">Losuj kolejność: <span id="shuffleState">wyłączone</span></button>
+        <button class="ghost" id="reset">Resetuj postęp</button>
+      </div>
+    </div>
+
+    <div class="card" id="quizOne" style="display:none">
+      <div class="q-index muted"></div>
+      <div class="question"></div>
+      <form class="options"></form>
+      <div class="controls" style="margin-top:12px">
+        <button class="btn" id="prev">← Wstecz</button>
+        <button class="primary" id="check">Sprawdź</button>
+        <button class="success" id="next">Dalej →</button>
+      </div>
+      <div class="result"></div>
+    </div>
+
+    <div class="card" id="quizList" style="display:none">
+      <div class="controls" style="margin-bottom:8px">
+        <button class="primary" id="checkAll">Sprawdź wszystko</button>
+        <button class="btn" id="reveal">Pokaż odpowiedzi</button>
+      </div>
+      <div id="listContainer" class="grid"></div>
+    </div>
+
+    <div class="card center" id="summary" style="display:none">
+      <h3>Podsumowanie</h3>
+      <p>Wynik: <span id="score" class="scr"></span></p>
+      <div class="controls center" style="justify-content:center">
+        <button class="btn" id="again">Jeszcze raz</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footerBar">
+    <div class="inner">
+      <div class="progress"><div id="prog"></div></div>
+      <div class="muted small"><span id="count">0/15</span></div>
+    </div>
+  </div>
+
+  <script>
+  // Dane pytań (z kluczem odpowiedzi podanym przez użytkownika)
+  const QUESTIONS = [
+    {
+      q: 'Pytanie 1. Obiekty z dziedziny automatyki można modelować za pomocą:',
+      opts: ['transformaty Laplace\'a','transmitancji operatorowej','transformacji różniczkowej','równań różniczkowych','transmitancji operacyjnej'],
+      correct: ['b','d']
+    },
+    {
+      q: 'Pytanie 2. Funkcja skoku jednostkowego zdefiniowana jest w następujący sposób:',
+      opts: ['0 dla t<0; 1 dla t>=0','0 dla t!=0; inf dla t=0','0 dla t!=0; inf dla t=1','1 dla t<0; 0 dla t>=0'],
+      correct: ['a']
+    },
+    {
+      q: 'Pytanie 3. Funkcja Delty Diraca zdefiniowana jest w następujący sposób:',
+      opts: ['0 dla t!=0; 1dla t=0','0 dla t!=0; nieskończoność dla t=0','0 dla t!=1; nieskonczonosc dla t=1','nieskończoność dla t!=0; 0 dla t=0'],
+      correct: ['b']
+    },
+    {
+      q: 'Pytanie 4. Na charakterystyki czasowe składają się:',
+      opts: ['odpowiedź impulsowa i odpowiedź skokowa','odpowiedź fazowa i odpowiedź amplitudowa','odpowiedź skokowa i odpowiedź Nyquista','odpowiedź impulsowa i odpowiedź fazowa'],
+      correct: ['a']
+    },
+    {
+      q: 'Pytanie 5. Za pomocą h(t) oznacza się:',
+      opts: ['odpowiedź obiektu na sygnał sinusoidalnie zmienny','odpowiedź skokową obiektu','odpowiedź impulsową obiektu','odpowiedź obiektu w dziedzinie czasu'],
+      correct: ['b']
+    },
+    {
+      q: 'Pytanie 6. Za pomocą g(t) oznacza się:',
+      opts: ['odpowiedź czasową obiektu','odpowiedź impulsową obiektu','odpowiedź obiektu automatyki na sygnał sinusoidalnie zmienny','odpowiedź skokową obiektu'],
+      correct: ['b']
+    },
+    {
+      q: 'Pytanie 7. Deklaracja w Scilab: G=syslin(\'c\',3/((10*s)+1)); spowoduje wygenerowanie:',
+      opts: ['modelu obiektu w postaci transmitancji operatorowej G(s)=3/(10*s+1)','modelu obiektu w postaci transformaty operatorowej G(s)=3/(10s+1)','modelu obiektu w postaci transmitancji G(t)=3/(10t+1)','obiektu w postaci transmitancji G(s)=30/(s+1)'],
+      correct: ['a']
+    },
+    {
+      q: 'Pytanie 8. Analityczne wyznaczenie postaci odpowiedzi skokowej polega na znalezieniu:',
+      opts: ['odwrotnej transformaty Laplace\'a z iloczynu transmitancji operatorowej obiektu i transformaty skoku jednostkowego','odwrotnej transformaty Laplace\'a z iloczynu transformaty operatorowej obiektu i transmitancji skoku jednostkowego','odwrotnej transformaty Laplace\'a z iloczynu transmitancji widmowej obiektu i transformaty skoku jednostkowego','transformaty Laplace\'a z iloczynu transmitancji operatorowej obiektu i transformacji skoku jednostkowego'],
+      correct: ['a']
+    },
+    {
+      q: 'Pytanie 9. Wykresy charakterystyk amplitudowo-fazowych układów realizowalnych fizycznie:',
+      opts: ['nigdy nie rozpoczynają się i nie kończą się w początku układu współrzędnych P(ω), jQ(ω)','dążą do początku układu współrzędnych P(ω), jQ(ω)','rozpoczynają się w dowolnym punkcie i kończą się w dowolnym punkcie','zawsze rozpoczynają się w punkcie (0,0) i kończą w nieskończoności'],
+      correct: ['b']
+    },
+    {
+      q: 'Pytanie 10. Argumentem dla charakterystyki Nyquista jest:',
+      opts: ['amplituda','faza','pulsacja','transmitancja'],
+      correct: ['c']
+    },
+    {
+      q: 'Pytanie 11. Charakterystyki Nyquista konstruuje się:',
+      opts: ['dla układu, na którego wejście podano sygnał sinusoidalnie zmienny o stałej amplitudzie i stałej pulsacji','jako wykres transmitancji widmowej układu na płaszczyźnie zmiennej zespolonej','dla układu, na którego wejście podano sygnał skok jednostkowy','dla układu, na którego wejście podano impuls Diraca'],
+      correct: ['b']
+    },
+    {
+      q: 'Pytanie 12. Z charakterystyki amplitudowo-fazowej można odczytać:',
+      opts: ['amplitudę i fazę sygnałów wejściowego i wyjściowego','amplitudę i fazę sygnału wyjściowego','amplitudę i fazę sygnału wejściowego','częstotliwość rezonansową i wzmocnienie'],
+      correct: ['b']
+    },
+    {
+      q: 'Pytanie 13. Do wygenerowania odpowiedzi skokowej systemu liniowego w środowisku Scilab, należy użyć funkcji:',
+      opts: ['syslin(\'c\',G); \'c\'-układ ciągły, G-transmitancja operatorowa','csim(\'impulse\',t,G); \'t\'-wektor czasu, G-transmitancja operatorowa','csim(\'step\',t,G); \'t\'-wektor czasu, G-transmitancja operatorowa','zpk(\'c\',G); obiekt w przestrzeni stanów, G-transmitancja'],
+      correct: ['c']
+    },
+    {
+      q: 'Pytanie 14. Użycie w Scilab funkcji nyquist(G,0,100) wygeneruje:',
+      opts: ['charakterystykę Nyquista dla obiektu o transmitancji G w zakresie zmienności pulsacji od 0 do 100','charakterystykę amplitudowo-fazową dla obiektu o transmitancji G w zakresie zmienności pulsacji od 0 do 100','charakterystykę Nyquista dla obiektu o transmitancji G w zakresie zmienności amplitudy od 0 do 100','charakterystykę Bode dla obiektu o transmitancji G w zakresie zmienności pulsacji od 0 do 100'],
+      correct: ['a','b']
+    },
+    {
+      q: 'Pytanie 15. Transmitancję operatorową G(s) jest określana jako:',
+      opts: ['stosunek transformaty Laplace\'a sygnału wejściowego do transformaty Laplace\'a sygnału wyjściowego przy zerowych warunkach początkowych','stosunek transformaty Laplace\'a sygnału wymuszenia do transformaty Laplace\'a sygnału odpowiedzi przy zerowych warunkach początkowych','stosunek transformaty Laplace\'a sygnału wyjściowego do transformaty Laplace\'a sygnału wymuszenia przy zerowych warunkach początkowych','transformata Laplace\'a sygnału wejściowego przez transformatę Laplace\'a sygnału wyjściowego przy zerowych warunkach początkowych'],
+      correct: ['c']
+    },
+  ];
+
+  // --- Helpers ---
+  const ls = {
+    get(k, d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d }catch(e){ return d } },
+    set(k, v){ localStorage.setItem(k, JSON.stringify(v)) }
+  };
+
+  const els = {
+    intro: document.getElementById('intro'),
+    quizOne: document.getElementById('quizOne'),
+    quizList: document.getElementById('quizList'),
+    listContainer: document.getElementById('listContainer'),
+    qIndex: document.querySelector('#quizOne .q-index'),
+    qText: document.querySelector('#quizOne .question'),
+    qForm: document.querySelector('#quizOne .options'),
+    res: document.querySelector('#quizOne .result'),
+    prev: document.getElementById('prev'),
+    next: document.getElementById('next'),
+    check: document.getElementById('check'),
+    prog: document.getElementById('prog'),
+    count: document.getElementById('count'),
+    summary: document.getElementById('summary'),
+    score: document.getElementById('score'),
+  };
+
+  let state = {
+    order: [],
+    idx: 0,
+    answers: {}, // {qIndex: Set([letters])}
+    shuffle: ls.get('quiz.shuffle', false),
+    mode: 'one' // 'one' | 'list'
+  };
+
+  function letters(n){ return ['a','b','c','d','e'].slice(0,n) }
+
+  function buildOrder(){
+    state.order = [...QUESTIONS.keys()];
+    if(state.shuffle){ state.order.sort(()=>Math.random()-0.5) }
+  }
+
+  function updateProgress(){
+    const answered = Object.keys(state.answers).length;
+    els.prog.style.width = (100*answered/QUESTIONS.length) + '%';
+    els.count.textContent = answered + '/' + QUESTIONS.length;
+  }
+
+  function renderOne(){
+    els.intro.style.display = 'none';
+    els.quizList.style.display = 'none';
+    els.summary.style.display = 'none';
+    els.quizOne.style.display = '';
+
+    const qi = state.order[state.idx];
+    const Q = QUESTIONS[qi];
+    const opts = Q.opts;
+    const lettersA = letters(opts.length);
+
+    els.qIndex.textContent = `Pytanie ${state.idx+1} z ${QUESTIONS.length}`;
+    els.qText.textContent = Q.q;
+    els.qForm.innerHTML = '';
+
+    opts.forEach((txt,i)=>{
+      const id = `q${qi}_opt${i}`;
+      const wrap = document.createElement('div');
+      wrap.className = 'opt';
+      const inp = document.createElement('input');
+      inp.type = 'checkbox';
+      inp.id = id;
+      inp.dataset.letter = lettersA[i];
+      const lab = document.createElement('label');
+      lab.setAttribute('for', id);
+      lab.innerHTML = `<b>${lettersA[i]}. </b> ${txt}`;
+      wrap.append(inp); wrap.append(lab);
+      els.qForm.append(wrap);
+    });
+
+    // restore selection
+    const saved = state.answers[qi] ? Array.from(state.answers[qi]) : [];
+    Array.from(els.qForm.querySelectorAll('input')).forEach(chk=>{
+      chk.checked = saved.includes(chk.dataset.letter);
+    });
+
+    els.res.textContent = '';
+    updateProgress();
+  }
+
+  function checkCurrent(showFeedback=true){
+    const qi = state.order[state.idx];
+    const picked = new Set(Array.from(els.qForm.querySelectorAll('input:checked')).map(x=>x.dataset.letter));
+    state.answers[qi] = picked;
+
+    const correct = new Set(QUESTIONS[qi].correct);
+    const allLetters = new Set(letters(QUESTIONS[qi].opts.length));
+
+    const isCorrect = (
+      picked.size === correct.size &&
+      [...picked].every(x=>correct.has(x))
+    );
+
+    if(showFeedback){
+      els.res.innerHTML = isCorrect
+        ? `<span class="good">✅ Dobrze!</span>`
+        : `<span class="bad">❌ Nie tak. Poprawne: <b>${[...correct].join(', ')}</b></span>`;
+
+      // koloruj opcje
+      els.qForm.querySelectorAll('.opt').forEach((div)=>{
+        const chk = div.querySelector('input');
+        const L = chk.dataset.letter;
+        if(correct.has(L)){
+          div.style.borderColor = 'rgba(123, 211, 137, .8)';
+        }
+        if(chk.checked && !correct.has(L)){
+          div.style.borderColor = 'rgba(255, 107, 107, .8)';
+        }
+      });
+    }
+
+    ls.set('quiz.answers', state.answers);
+    updateProgress();
+    return isCorrect;
+  }
+
+  function renderList(){
+    els.intro.style.display = 'none';
+    els.quizOne.style.display = 'none';
+    els.summary.style.display = 'none';
+    els.quizList.style.display = '';
+
+    els.listContainer.innerHTML = '';
+
+    state.order.forEach((qi,idx)=>{
+      const Q = QUESTIONS[qi];
+      const card = document.createElement('div');
+      card.className = 'card';
+      const head = document.createElement('div');
+      head.innerHTML = `<div class="q-index muted">Pytanie ${idx+1}</div><div class="question">${Q.q}</div>`;
+      const form = document.createElement('form');
+      form.className = 'options';
+
+      const lettersA = letters(Q.opts.length);
+      Q.opts.forEach((txt,i)=>{
+        const id = `list_${qi}_${i}`;
+        const wrap = document.createElement('div');
+        wrap.className = 'opt';
+        const inp = document.createElement('input');
+        inp.type = 'checkbox';
+        inp.id = id; inp.dataset.letter = lettersA[i];
+        const lab = document.createElement('label');
+        lab.setAttribute('for', id);
+        lab.innerHTML = `<b>${lettersA[i]}. </b> ${txt}`;
+        wrap.append(inp); wrap.append(lab);
+        form.append(wrap);
+      });
+
+      // restore
+      const saved = state.answers[qi] ? Array.from(state.answers[qi]) : [];
+      form.querySelectorAll('input').forEach(chk=>{ chk.checked = saved.includes(chk.dataset.letter); });
+
+      card.append(head); card.append(form);
+      els.listContainer.append(card);
+    });
+    updateProgress();
+  }
+
+  function finishSummary(){
+    let good = 0;
+    state.order.forEach((qi)=>{
+      const picked = state.answers[qi] || new Set();
+      const corr = new Set(QUESTIONS[qi].correct);
+      if(picked.size === corr.size && [...picked].every(x=>corr.has(x))) good++;
+    });
+    els.summary.style.display = '';
+    els.quizOne.style.display = 'none';
+    els.quizList.style.display = 'none';
+    els.score.textContent = `${good} / ${QUESTIONS.length}`;
+  }
+
+  // --- Eventy ---
+  document.getElementById('startOne').onclick = () => { state.mode='one'; buildOrder(); renderOne(); };
+  document.getElementById('startList').onclick = () => { state.mode='list'; buildOrder(); renderList(); };
+
+  document.getElementById('toggleShuffle').onclick = (e)=>{
+    state.shuffle = !state.shuffle; ls.set('quiz.shuffle', state.shuffle);
+    document.getElementById('shuffleState').textContent = state.shuffle? 'włączone':'wyłączone';
+  };
+
+  document.getElementById('reset').onclick = ()=>{
+    state.answers = {}; ls.set('quiz.answers', state.answers); state.idx=0; updateProgress(); alert('Zresetowano postęp.');
+  };
+
+  els.prev.onclick = (ev)=>{ ev.preventDefault(); if(state.idx>0){ state.idx--; renderOne(); }};
+  els.next.onclick = (ev)=>{ ev.preventDefault(); if(state.idx<QUESTIONS.length-1){ state.idx++; renderOne(); } else { finishSummary(); } };
+  els.check.onclick = (ev)=>{ ev.preventDefault(); const ok=checkCurrent(true); if(ok && state.idx<QUESTIONS.length-1){ /* opcjonalnie auto-next */ } };
+
+  document.getElementById('checkAll').onclick = ()=>{
+    // zczytaj wybory z listy i oceń
+    state.order.forEach((qi)=>{
+      const form = document.querySelector(`#listContainer form:nth-of-type(${state.order.indexOf(qi)+1})`) || null;
+    });
+    // odśwież stan
+    document.querySelectorAll('#listContainer .card').forEach((card, idx)=>{
+      const qi = state.order[idx];
+      const picks = new Set(Array.from(card.querySelectorAll('input:checked')).map(x=>x.dataset.letter));
+      state.answers[qi] = picks;
+      // kolorowanie
+      const corr = new Set(QUESTIONS[qi].correct);
+      card.querySelectorAll('.opt').forEach(div=>{
+        const L = div.querySelector('input').dataset.letter;
+        if(corr.has(L)) div.style.borderColor = 'rgba(123, 211, 137, .8)';
+        if(div.querySelector('input').checked && !corr.has(L)) div.style.borderColor = 'rgba(255, 107, 107, .8)';
+      });
+    });
+    ls.set('quiz.answers', state.answers);
+    updateProgress();
+  };
+
+  document.getElementById('reveal').onclick = ()=>{
+    // Zaznacz poprawne
+    document.querySelectorAll('#listContainer .card').forEach((card, idx)=>{
+      const qi = state.order[idx];
+      const corr = new Set(QUESTIONS[qi].correct);
+      card.querySelectorAll('.opt').forEach(div=>{
+        const inp = div.querySelector('input');
+        const L = inp.dataset.letter;
+        inp.checked = corr.has(L);
+        div.style.borderColor = corr.has(L) ? 'rgba(123, 211, 137, .8)' : '#202b3a';
+      });
+      state.answers[qi] = new Set(QUESTIONS[qi].correct);
+    });
+    ls.set('quiz.answers', state.answers);
+    updateProgress();
+  };
+
+  document.getElementById('again').onclick = ()=>{
+    state.answers = {}; ls.set('quiz.answers', state.answers); state.idx = 0; buildOrder(); els.summary.style.display='none'; renderOne();
+  };
+
+  // Init UI
+  (function init(){
+    const savedAns = ls.get('quiz.answers', {});
+    // convert arrays back to Set
+    const restored = {};
+    for(const k in savedAns){ restored[k] = new Set(savedAns[k]); }
+    state.answers = restored;
+    document.getElementById('shuffleState').textContent = state.shuffle? 'włączone':'wyłączone';
+    updateProgress();
+  })();
+  </script>
+</body>
+</html>
